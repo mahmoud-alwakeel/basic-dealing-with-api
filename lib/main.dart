@@ -1,45 +1,68 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
-Future<Album> fetchAlbum() async {
+Future<Property> fetchProperty() async {
   final response = await http
-      .get(Uri.parse('https://jsonplaceholder.typicode.com/albums/1'));
-
+      .get(Uri.parse('https://localhost:7046/Property/GetProperty/19'));
+  print(response.body);
   if (response.statusCode == 200) {
     // If the server did return a 200 OK response,
     // then parse the JSON.
-    return Album.fromJson(jsonDecode(response.body));
+    return Property.fromJson(jsonDecode(response.body));
+
   } else {
     // If the server did not return a 200 OK response,
     // then throw an exception.
+
     throw Exception('Failed to load album');
+  }
+
+}
+
+class MyHttpoverrides extends HttpOverrides{
+  @override
+  HttpClient createHttpClient(SecurityContext? context){
+    return super.createHttpClient(context)
+      ..badCertificateCallback = (X509Certificate cert, String host, int port)=> true;
   }
 }
 
-class Album {
-  final int userId;
-  final int id;
-  final String title;
+class Property {
+  // final int PropertyId;
+  // final int phoneNum;
+  //final Map<String ,List>? dealType;
+  final String sellerName;
 
-  const Album({
-    required this.userId,
-    required this.id,
-    required this.title,
+  const Property({
+    // required this.PropertyId,
+    // required this.phoneNum,
+    //required this.dealType,
+    required this.sellerName,
   });
 
-  factory Album.fromJson(Map<String, dynamic> json) {
-    return Album(
-      userId: json['userId'],
-      id: json['id'],
-      title: json['title'],
+  factory Property.fromJson(Map<String, dynamic> json) {
+    var x =  json['dealType']['properties'][0]['seller']['sellerName'];
+    //var y = x['properties'];
+    //print(y[0]['seller']['sellerName']);
+    return Property(
+      // PropertyId: json['PropertyId'],
+      // phoneNum: json['phoneNum'],
+      sellerName: x,
+
     );
   }
 }
 
-void main() => runApp(const MyApp());
+
+void main() {
+  HttpOverrides.global = MyHttpoverrides();
+  runApp(const MyApp());
+
+}
 
 class MyApp extends StatefulWidget {
   const MyApp({super.key});
@@ -49,12 +72,14 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  late Future<Album> futureAlbum;
+  late Future<Property> futureProperty;
+
+
 
   @override
   void initState() {
     super.initState();
-    futureAlbum = fetchAlbum();
+    futureProperty = fetchProperty();
   }
 
   @override
@@ -69,13 +94,18 @@ class _MyAppState extends State<MyApp> {
           title: const Text('Fetch Data Example'),
         ),
         body: Center(
-          child: FutureBuilder<Album>(
-            future: futureAlbum,
+          child: FutureBuilder<Property>(
+            future: futureProperty,
             builder: (context, snapshot) {
+              //print(snapshot.data!.sellerName!);
               if (snapshot.hasData) {
-                return Text(snapshot.data!.title);
+                print("has dataaaa");
+
+                return Text(snapshot.data!.sellerName!);
               } else if (snapshot.hasError) {
+                print("erorrrrr");
                 return Text('${snapshot.error}');
+
               }
 
               // By default, show a loading spinner.
